@@ -5,7 +5,6 @@
 #include <mm_visualize/mm_config.hpp>
 #include <mm_msg/TargetTrajectories.h>
 #include <mm_msg/SolverInput.h>
-// using namespace CRISP;
 namespace mm_ros_control{
 
 bool mmRosControl::init(hardware_interface::VelocityJointInterface* hw, ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh) {

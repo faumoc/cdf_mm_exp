@@ -26,8 +26,6 @@ find_package(catkin REQUIRED COMPONENTS ${CATKIN_PACKAGE_DEPENDENCIES})
 find_package(PCL 1.7 REQUIRED COMPONENTS common io)
 # find_library(fmt REQUIRED)
 
-message(STATUS "CRISP include dir: ${CRISP_INCLUDE_DIRS}")
-message(STATUS "CRISP library dir: ${CRISP_LIBRARIES}")
 
 # set(ENV{PKG_CONFIG_PATH} "/usr/local/share/pkgconfig:$ENV{PKG_CONFIG_PATH}")
 
@@ -82,8 +80,7 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
   # ${EIGEN3_INCLUDE_DIRS}
   ${pinocchio_INCLUDE_DIRS}
-  ${PCL_INCLUDE_DIRS}
-  ${CRISP_INCLUDE_DIRS}                 
+  ${PCL_INCLUDE_DIRS}               
   ${EIGEN3_INCLUDE_DIR}     
   ${CPPAD_INCLUDE_DIRS}
   ${YAML_CPP_INCLUDE_DIR}
@@ -117,7 +114,6 @@ target_link_libraries(
   piqp::piqp # the piqp library (header file library)
   -ldl
   casadi::casadi # link to casadi
-  ${CRISP_LIBRARIES}
   ${pinocchio_LIBRARY_DIRS}
   )
 

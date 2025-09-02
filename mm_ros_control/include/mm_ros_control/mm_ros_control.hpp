@@ -21,7 +21,6 @@
 #include <mm_msg/SolverInput.h>
 
 using namespace mobile_manipulator;
-// using namespace CRISP;
 namespace mm_ros_control {
 
     class mmRosControl : public controller_interface::Controller<hardware_interface::VelocityJointInterface> {
