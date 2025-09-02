@@ -1,0 +1,6 @@
+<library path="lib/libmm_ros_control">
+
+  <class name="mm_ros_control/mmRosControl" type="mm_ros_control::mmRosControl" base_class_type="controller_interface::ControllerBase">
+  </class>
+
+</library>

@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>mm_ros_control</name>
+  <version>0.0.1</version>
+  <description>The MM ROS Control package</description>
+
+  <maintainer email="dbaret@ethz.ch">Davide Baret</maintainer>
+
+  <license>TODO</license>
+
+  <depend>roscpp</depend>
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <depend>controller_interface</depend>
+  <depend>hardware_interface</depend>
+
+  <depend>ddynamic_reconfigure</depend>
+  <depend>manipulation_msgs</depend>
+
+  <depend>tf</depend>
+  <depend>tf2_ros</depend>
+  <depend>tf2_geometry_msgs</depend>
+  <depend>urdf</depend>
+  <depend>kdl_parser</depend>
+  <depend>robot_state_publisher</depend>
+  <depend>visualization_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>nav_msgs</depend>
+  <depend>mm_msg</depend>
+  <depend>mm_visualize</depend>
+  <depend>interactive_markers</depend>
+  <build_depend>pluginlib</build_depend>
+  <build_export_depend>pluginlib</build_export_depend>
+  <exec_depend>pluginlib</exec_depend>
+  <!-- The export tag contains other, unspecified, tags -->
+  <exec_depend>python3-numpy</exec_depend>
+  <exec_depend>ros_numpy</exec_depend>
+
+  <export>
+    <controller_interface plugin="${prefix}/mm_ros_control_plugin.xml"/>
+  </export>
+</package>

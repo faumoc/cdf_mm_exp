@@ -1,0 +1,3 @@
+[submodule "manipulation_tools"]
+	path = manipulation_tools
+	url = https://github.com/leggedrobotics/manipulation_tools.git
