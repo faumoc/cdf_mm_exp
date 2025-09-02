@@ -21,7 +21,7 @@ MMVisConfig::MMVisConfig(): mesh_mobile_base_(""),
 
 void MMVisConfig::setParam(ros::NodeHandle &nh){
      
-    std::string mesh_path = ros::package::getPath("swerve_description")  + "/meshes_copy/";
+    std::string mesh_path = ros::package::getPath("swerve_description")  + "/meshes/";
     
 
     mesh_mobile_base_ = "file://" + mesh_path + "holonomic/base_link.STL";

@@ -27,15 +27,12 @@
   <param name="libFolder" value="$(arg libFolder)" />
   <param name="model_size" value="$(arg model_size_File)" />
   <param name="pcd_file" value="$(find mm_ros_control)/data/cdf01.pcd"/>
-  <!-- <param name="CdfLibFolder" value="$(find crisp_solver)/lib"/> -->
-  
+
   <group ns="$(arg ns)">
     <node name="task_space_action_server" pkg="trapezoidal_tracker" type="task_space_action_server_node" output="screen" >
       <rosparam command="load" file="$(arg action_server_config)" />
     </node>
-<!-- 
-    <node name="crisp_solver_node" pkg="crisp_solver" type="crisp_solver_node" output="screen">
-    </node> -->
+
   </group>
    
   
@@ -47,5 +44,5 @@
   </include>
 
   <include file="$(find swerve_control)/launch/opc.launch"/>
-  <node name="rosbag_record" pkg="rosbag" type="record" args="-a -O $(find swerve_control)/record/bag" output="screen" />
+  <!-- <node name="rosbag_record" pkg="rosbag" type="record" args="-a -O $(find swerve_control)/record/bag" output="screen" /> -->
 </launch>

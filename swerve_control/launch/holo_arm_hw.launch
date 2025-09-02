@@ -21,7 +21,6 @@
   <param name="taskFile" value="$(arg taskFile)" />
   <param name="libFolder" value="$(arg libFolder)" />
   <param name="model_size" value="$(arg model_size_File)" />
-  <param name="CdfLibFolder" value="$(find crisp_solver)/lib"/>
 
   <param name="robot_description" command="$(find xacro)/xacro $(arg model)" />
   
