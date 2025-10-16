@@ -77,6 +77,7 @@ class OdometryController : public controller_interface::Controller<hardware_inte
   std::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::Odometry> > odom_twist_world_pub_;
   std::shared_ptr<realtime_tools::RealtimePublisher<tf::tfMessage> > tf_odom_pub_;
   ros::Subscriber lidar_odom_sub_;
+  ros::Subscriber ground_truth_odom_sub_;
   ros::Subscriber client_odom_sub_;
   /// Wheel radius (assuming it's the same for all wheels):
   double wheel_radius_;
@@ -137,6 +138,8 @@ class OdometryController : public controller_interface::Controller<hardware_inte
   
   tf2_ros::Buffer buffer_;
   tf2_ros::TransformListener listener_;
+  geometry_msgs::Pose groundTruthObservedPose_;
+  bool groundTruthReceived_ = false;
 };
 
 }  // namespace odometry_controller

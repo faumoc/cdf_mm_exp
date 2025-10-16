@@ -90,7 +90,21 @@ bool OdometryController::init(hardware_interface::JointStateInterface* joint_sta
   steeringPositionUpdateTimer_ = controller_nh.createTimer(ros::Duration(0.05), [this](const auto& e) { steeringPositionCallback(e); });
   controller_nh.param("lidar_global_odom", lidar_global_odom_, false);
   ROS_INFO_STREAM_NAMED(name_, "lidar global odom is " << (enable_odom_tf_ ? "enabled" : "disabled"));
-  
+  ground_truth_odom_sub_ = controller_nh.subscribe<nav_msgs::Odometry>("/swerve_base/base_pose_ground_truth", 1, 
+      [this](const boost::shared_ptr<const nav_msgs::Odometry>& msg) {
+        auto gtPos = msg->pose.pose.position; 
+        auto gtOrient = msg->pose.pose.orientation;
+        groundTruthObservedPose_.position.x = gtPos.x;
+        groundTruthObservedPose_.position.y = gtPos.y;
+        groundTruthObservedPose_.position.z = gtPos.z;
+
+        groundTruthObservedPose_.orientation.x = gtOrient.x;
+        groundTruthObservedPose_.orientation.y = gtOrient.y;
+        groundTruthObservedPose_.orientation.z = gtOrient.z;
+        groundTruthObservedPose_.orientation.w = gtOrient.w;
+
+        groundTruthReceived_ = true;
+      });
   if(lidar_global_odom_){
      
     lidar_odom_sub_ = controller_nh.subscribe<nav_msgs::Odometry>("/odom", 1, 
@@ -199,6 +213,13 @@ void OdometryController::update(const ros::Time& time, const ros::Duration& peri
         odom_frame.transform.translation.y = localPos_.y();
         odom_frame.transform.rotation = orientation_;
       }
+      else if (groundTruthReceived_)
+      {
+        odom_frame.transform.translation.x = groundTruthObservedPose_.position.x;
+        odom_frame.transform.translation.y = groundTruthObservedPose_.position.y;
+        odom_frame.transform.rotation = groundTruthObservedPose_.orientation;
+      }
+
       else{
         odom_frame.transform.translation.x = x_;
         odom_frame.transform.translation.y = y_;

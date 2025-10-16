@@ -35,7 +35,7 @@ Panels:
   - Class: rviz/Time
     Name: Time
     SyncMode: 0
-    SyncSource: ""
+    SyncSource: PointCloud
 Preferences:
   PromptSaveOnExit: true
 Toolbars:
@@ -394,7 +394,7 @@ Visualization Manager:
       Size (Pixels): 20
       Size (m): 0.07999999821186066
       Style: Points
-      Topic: /swerve_base/Downsampled_Cloud
+      Topic: /swerve_base/cloud
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
@@ -524,7 +524,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/ThirdPersonFollower
-      Distance: 4.73398494720459
+      Distance: 5.938310623168945
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -532,17 +532,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 0.06768453121185303
-        Y: -0.527717113494873
+        X: -1.6989084482192993
+        Y: 0.5781652927398682
         Z: 5.960464477539062e-07
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.46979597210884094
+      Pitch: 0.2997959554195404
       Target Frame: <Fixed Frame>
-      Yaw: 0.6374232172966003
+      Yaw: 1.512422800064087
     Saved: ~
 Window Geometry:
   Displays:

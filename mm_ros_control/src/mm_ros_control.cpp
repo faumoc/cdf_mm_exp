@@ -9,6 +9,7 @@
 #include <trac_ik/trac_ik.hpp>
 #include <kdl/chainiksolverpos_lma.hpp>
 #include <urdf/model.h>
+#include <chrono>
 namespace mm_ros_control{
 
 bool mmRosControl::init(hardware_interface::VelocityJointInterface* hw, ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh) {
@@ -330,7 +331,97 @@ void mmRosControl::update(const ros::Time& time, const ros::Duration& period) {
     }
     case EXECUTING_TRAJECTORY:
     {
-        if (prev_state != EXECUTING_TRAJECTORY) std::cout << "EXECUTING_TRAJECTORY ..." << std::endl;
+        static int ObjectPointIndex = 0;
+        static auto time =  std::chrono::high_resolution_clock::now();
+        static auto start_time =  std::chrono::high_resolution_clock::now();
+        if (prev_state != EXECUTING_TRAJECTORY) 
+        {
+            std::cout << "EXECUTING_TRAJECTORY ..." << std::endl;
+            ObjectPointIndex = 0;
+            time =  std::chrono::high_resolution_clock::now();
+            start_time =  std::chrono::high_resolution_clock::now();
+        }
+
+        int objectTrajSize;
+        objectTrajSize = ObjectTrajectory_.size();
+        
+        vector_t startState;
+        vector_t ObjectState;
+        vector_t Input;
+        {
+            startState = ObjectTrajectory_[ObjectPointIndex].state;
+            ObjectState = ObjectTrajectory_[ObjectPointIndex+1].state;
+            Input = ObjectTrajectory_[ObjectPointIndex].input;
+            // std::cout << "Current trajectory point ---: " << ObjectPointIndex+1 << "/" << objectTrajSize << std::endl;
+        }
+
+        double theta_z = 2 * atan2(currentObservedPose_.orientation.z, currentObservedPose_.orientation.w);
+        auto currtime =  std::chrono::high_resolution_clock::now();
+        double elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(currtime - time).count();
+        // std::cout << "time since last point: "<< elapsed << " milliseconds." << std::endl;
+        double alpha = elapsed / 1000.0; // 1.0s between two points
+        if (alpha > 1.0) alpha = 1.0;
+        vector_t interpState = startState + alpha * (ObjectState - startState);
+
+        baseVel[0] = 5 * (interpState(2) - theta_z);
+        baseVel[1] = 10 * ( interpState(0) - currObservation_.state(x_state_ind));
+        baseVel[2] = 10 * ( interpState(1) - currObservation_.state(y_state_ind)) ;
+        if(baseVel[0] < -0.5 )
+            baseVel[0] = -0.5;
+        else if (baseVel[0] > 0.5)
+            baseVel[0] = 0.5;
+        if(baseVel[1] < -1 )
+            baseVel[1] = -1;
+        else if (baseVel[1] > 1)
+            baseVel[1] = 1;
+        if(baseVel[2] < -1)
+            baseVel[2] = -1;
+        else if (baseVel[2] > 1)
+            baseVel[2] = 1;
+
+        // translated velocity to robot frame
+        double cos_theta = cos(theta_z);
+        double sin_theta = sin(theta_z);
+        double vx = baseVel[1] * cos_theta + baseVel[2] * sin_theta;
+        double vy = -baseVel[1] * sin_theta + baseVel[2] * cos_theta;
+        baseVel[1] = vx;
+        baseVel[2] = vy;
+
+        wheelVels = mmVisConfigPtr_->baseKinemics(baseVel);
+        currInputs.wheelsInput = wheelVels.head(4);
+        currInputs.steersInput = wheelVels.tail(4);
+        for (int i = 0; i < 6; i++)
+        {
+            currInputs.armInputs(i) =  10 * (interpState(3+i) - currObservation_.state(sh_rot_state_ind + i));
+        }
+        
+        double dist = (ObjectState.head(2) - currObservation_.state.head(2)).norm() + abs(ObjectState(2) - theta_z);
+        if (dist < 0.02 ){
+            ObjectPointIndex++;
+            time =  std::chrono::high_resolution_clock::now();
+            std::cout << "Current trajectory point: " << ObjectPointIndex << "/" << objectTrajSize << std::endl;
+            std::cout << "Target position: "<< interpState.head(3).transpose() << std::endl;
+            std::cout << "Current position: "<< currObservation_.state.head(3).transpose() << std::endl;
+            elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(time - start_time).count();
+            std::cout << "time to reach target: "<< elapsed / 1000.0 << " seconds." << std::endl;
+            
+        }
+        
+
+
+        if (ObjectPointIndex >= objectTrajSize - 1){
+            std::cout << "Trajectory execution completed." << std::endl;
+            stateMachine_ = IDLE;
+            currInputs.wheelsInput.setZero();
+            currInputs.steersInput.setZero();
+            currInputs.armInputs.setZero();
+        
+            for (int i = 0; i < 6; i++)
+            {
+            currInputs.armInputs(i) = 50 * (arm_position[i] - currObservation_.state(sh_rot_state_ind + i));
+            }
+            break;
+        }
         break;
         
     }
@@ -478,8 +569,16 @@ void mmRosControl::trajectoryCallback(const mm_msg::TargetTrajectories::ConstPtr
            state(sh_rot_state_ind + 4) = msg->stateTrajectory[i].data[7]; // q4
            state(sh_rot_state_ind + 5) = msg->stateTrajectory[i].data[8]; // q5
 
-           mobile_manipulator::MMState State;
-           State.q = getPinocchioJointPosition(state);
+            mobile_manipulator::MMState State;
+            State.q = getPinocchioJointPosition(state);
+            State.state = vector_t::Zero(9);
+            State.input = vector_t::Zero(9);
+            for (int j = 0; j < 9; j++){
+                State.state(j) = msg->stateTrajectory[i].data[j];
+                State.input(j) = msg->inputTrajectory[i].data[j];
+            }
+            std::cout << "Trajectory point " << i << ": " << State.state.transpose() << std::endl;
+              
            ObjectTrajectory_.push_back(State);
        }
 

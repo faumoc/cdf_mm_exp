@@ -23,7 +23,8 @@ namespace mobile_manipulator
         double time_stamp;
         
         Eigen::VectorXd q;
-        Eigen::VectorXd dq;
+        Eigen::VectorXd state;
+        Eigen::VectorXd input;
     };
 
     class MMVisConfig

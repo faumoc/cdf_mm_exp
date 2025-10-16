@@ -90,6 +90,7 @@ namespace mm_ros_control {
         ModelSettings modelSettings_;
         std::unique_ptr<SwerveTarget> swerveTarget_;
         geometry_msgs::Pose currentObservedPose_;
+        
         vector_t traj_target_;
         
         std::vector<std::string> jointNames_;
