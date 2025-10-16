@@ -1,11 +1,43 @@
 <?xml version="1.0"?>
 
-<robot name="holonomic_base"
-    xmlns:xacro="http://ros.org/wiki/xacro">
+<robot name="holonomic_base" xmlns:xacro="http://ros.org/wiki/xacro">
 
     <!-- "" -->
 
-    <link name="base_link"/>
+       <link name="base_link"/>
+
+    <link name="move_x_link"/>
+    <joint name="move_x_joint" type="prismatic">
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <parent link="base_link"/>
+        <child link="move_x_link" />
+        <axis xyz="1 0 0" />
+        <limit effort="1000" lower="-100.0" upper="100.0" velocity="1.0"/>
+        <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-10.0" soft_upper_limit="100.0" />
+        <joint_properties damping="100.0" friction="5.0"/>
+    </joint>
+    
+    <link name="move_y_link"/>
+    <joint name="move_y_joint" type="prismatic">
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <parent link="move_x_link"/>
+        <child link="move_y_link" />
+        <axis xyz="0 1 0" />
+        <limit effort="1000" lower="-100.0" upper="100.0" velocity="1.0"/>
+        <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-100.0" soft_upper_limit="100.0" />
+        <joint_properties damping="100.0" friction="5.0"/>
+    </joint>
+
+    <link name="move_yaw_link"/>
+    <joint name="move_yaw_joint" type="revolute">
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <parent link="move_y_link"/>
+        <child link="move_yaw_link" />
+        <axis xyz="0 0 1" />
+        <limit effort="1000" lower="-3.1416" upper="3.1416" velocity="1.0"/>
+        <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-3.1416" soft_upper_limit="3.1416" />
+        <joint_properties damping="100.0" friction="5.0"/>
+    </joint>
 
     <link name="m_body">
         <inertial>
@@ -31,10 +63,9 @@
     </link>
     <joint name="xbase_arm_joint" type="fixed">
         <origin xyz="0.2625 0 0.2745" rpy="0 0 0" />
-        <parent link="base_link"/>
+        <parent link="move_yaw_link"/>
         <child link="x_arm_link" />
     </joint>
-
 
 
     <joint name="base_link_to_body" type="fixed">
@@ -450,8 +481,8 @@
         <parent link="x_arm_link" />
         <child link="shoulder_link" />
         <axis xyz="0 0 1" />
-        <limit effort="39.0" lower="-6.28" upper="6.28" velocity="1.3963"/>
-        <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-6.2" soft_upper_limit="6.2" />
+        <limit effort="39.0" lower="-3.28" upper="6.28" velocity="1.3963"/>
+        <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-3.28" soft_upper_limit="3.28" />
         <joint_properties damping="1.0" friction="5.0"/>
     </joint>
     <link name="bicep_link">
@@ -543,8 +574,8 @@
         <parent link="forearm_link" />
         <child link="spherical_wrist_1_link" />
         <axis xyz="0 0 1" />
-        <limit effort="9.0" lower="-6.28" upper="6.28" velocity="1.2218"/>
-        <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-6.18" soft_upper_limit="6.18" />
+        <limit effort="9.0" lower="-3.28" upper="3.28" velocity="1.2218"/>
+        <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-3.18" soft_upper_limit="3.18" />
         <joint_properties damping="1.0" friction="5.0"/>
     </joint>
     <link name="spherical_wrist_2_link">
@@ -661,12 +692,6 @@
             <parent link="end_effector_link" />
             <child link="camera_color_frame" />
         </joint>
-        <link name="lidar_frame" />
-        <joint name="lidar_module" type="fixed">
-            <origin xyz="-0.306389 0 0.406017 " rpy="0 0 0" />
-            <parent link="base_link" />
-            <child link="lidar_frame" />
-        </joint>
     </xacro:if>
 
  
@@ -730,31 +755,8 @@
         </actuator>
     </transmission>
 
-    <!-- import main macro -->
-    <xacro:include filename="$(find swerve_description)/urdf/gripper/ag95_macro.xacro" />
-
-    <!-- parameters -->
-    <xacro:arg name="transmission_hw_interface" default="hardware_interface/VelocityJointInterface" />
-
-    <!-- gripper -->
-    <xacro:dh_ag95_gripper
-        prefix=""
-        transmission_hw_interface="$(arg transmission_hw_interface)" parent="bracelet_link">
-        <origin xyz="0 0 -0.0640250000000001" rpy="3.14159265358979 1.09937075168372E-32 3.14159265358979" />
-    </xacro:dh_ag95_gripper>
-    
     <gazebo>
         <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so"/>
-                 <plugin name="ground_truth_odometry" filename="libgazebo_ros_p3d.so">
-            <alwaysOn>true</alwaysOn>
-            <updateRate>100.0</updateRate>
-            <bodyName>base_link</bodyName>
-            <topicName>base_pose_ground_truth</topicName>
-            <gaussianNoise>0.0</gaussianNoise>
-            <frameName>map</frameName>
-            <xyzOffsets>0 0 0</xyzOffsets>
-            <rpyOffsets>0 0 0</rpyOffsets>
-         </plugin>
     </gazebo>
 
 

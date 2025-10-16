@@ -13,7 +13,7 @@
     empy world: worlds/empty.world
     slope world (single slope to test SE3 MPC): $(find swerve_description)/worlds/slope.world
   -->
-  <arg name="world_name" default="worlds/empty.world"/>
+  <arg name="world_name" default="$(find swerve_description)/worlds/cdf_test.world"/>
 
   <param name="robot_description" command="$(find xacro)/xacro $(arg model)" />
 

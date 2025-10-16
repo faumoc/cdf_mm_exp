@@ -3,7 +3,7 @@
 
   <arg name="mpc" default="false" />
   <arg name="model" default="$(find swerve_description)/urdf/whole_robot_with_gripper.xacro" />
-  <arg name="gazebo_gui" default="false" />
+  <arg name="gazebo_gui" default="true" />
   <!-- <arg name="model" default="$(find swerve_description)/urdf/holonomic_mm_arm.urdf.xacro" /> -->
 
   <include file="$(find swerve_control)/launch/highlevel_controller.launch">
@@ -14,6 +14,7 @@
   <arg name="action_server_config" value="$(find mm_ros_control)/config/task_space_action_server/swerve_base.yaml" />
    <!-- The URDF model of the robot -->
   <arg name="urdf_path" default="$(find swerve_description)/urdf/holonomic_mm_arm.urdf.xacro" />
+  <arg name="ik_urdf_path" default="$(find swerve_description)/urdf/holonomic_mm_arm_ik.urdf.xacro" />
   <!-- <arg name="urdf_path" default="$(find swerve_description)/urdf/whole_robot_with_gripper.xacro" /> -->
   <!-- The task file for the mpc. -->
   <arg name="taskFile" default="$(find mm_ros_control)/config/mpc/task_arm.info"/>
@@ -23,10 +24,11 @@
   <arg name="model_size_File" default="$(find mm_ros_control)/config/model_size.info" />
 
   <param name="/swerve_mpc/robot_description" command="$(find xacro)/xacro $(arg urdf_path)"/>
+  <param name="/ik_robot_description" command="$(find xacro)/xacro $(arg ik_urdf_path)"/>
   <param name="taskFile" value="$(arg taskFile)" />
   <param name="libFolder" value="$(arg libFolder)" />
   <param name="model_size" value="$(arg model_size_File)" />
-  <param name="pcd_file" value="$(find mm_ros_control)/data/cdf01.pcd"/>
+  <param name="pcd_file" value="$(find mm_ros_control)/data/vis.pcd" />
 
   <group ns="$(arg ns)">
     <node name="task_space_action_server" pkg="trapezoidal_tracker" type="task_space_action_server_node" output="screen" >
@@ -40,7 +42,7 @@
     <arg name="model" value="$(arg model)" />
     <arg name="gui" default="$(arg gazebo_gui)" />
     <arg name="ns" value="$(arg ns)" />
-    <!-- <arg name="world_name" value="$(find swerve_description)/worlds/shelf.world" /> -->
+    <arg name="world_name" value="$(find swerve_description)/worlds/cdf_test.world" />
   </include>
 
   <include file="$(find swerve_control)/launch/opc.launch"/>

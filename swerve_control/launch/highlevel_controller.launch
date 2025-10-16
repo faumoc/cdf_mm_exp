@@ -22,7 +22,7 @@
     <group unless="$(arg use_radar)">
       <param name="odometry_controller/enable_odom_tf" value="true"/>
       <param name="odometry_controller/lidar_global_odom" value="false"/>
-      <param name="mm_ros_control/odom_topic" value="odometry_controller/odom"/>
+      <param name="mm_ros_control/odom_topic" value="/swerve_base/base_pose_ground_truth"/>
     </group>
 
     <node name="load_controllers" pkg="controller_manager" type="controller_manager" output="screen" args="load $(arg startup_controllers)" />

@@ -7,6 +7,7 @@
 #include <pinocchio/parsers/urdf.hpp>
 #include <urdf_parser/urdf_parser.h>
 #include <pinocchio/algorithm/frames.hpp>
+
 namespace mobile_manipulator
 {
 MMVisConfig::MMVisConfig(): mesh_mobile_base_(""),
@@ -107,6 +108,152 @@ void MMVisConfig::DisplayTrajectory(const std::vector<MMState> &traj, double alp
     traj_vis_pub_.publish(marker_array);
 }
 
+void MMVisConfig::UpdatePinocchioModel(const vector_t& joint_state){
+    pinocchio::forwardKinematics(*pinocchio_model_ptr_, *pinocchio_data_ptr_, joint_state);
+    pinocchio::updateFramePlacements(*pinocchio_model_ptr_, *pinocchio_data_ptr_);
+    currState_ = joint_state;
+    
+}
+vector_t MMVisConfig::baseKinemics(const vector_t& baseInput){
+    using vector3 = Eigen::Matrix<scalar_t, 3, 1>;
+    const scalar_t wheelRadius = 0.065;
+    
+        // Get index
+    int indBaseLink = pinocchio_model_ptr_->getFrameId("base_link");
+    //LB
+    // int indBrakeLB = pinocchio_model_ptr_->getFrameId("left_back_brake_joint");
+    int indWheelLB = pinocchio_model_ptr_->getFrameId("left_back_wheel_joint");
+    int indSteerlLB = pinocchio_model_ptr_->getFrameId("left_back_steer_joint");
+    //LF
+    // int indBrakeLF = pinocchio_model_ptr_->getFrameId("left_front_brake_joint");
+    int indWheelLF = pinocchio_model_ptr_->getFrameId("left_front_wheel_joint");
+    int indSteerlLF = pinocchio_model_ptr_->getFrameId("left_front_steer_joint");
+    //RB
+    // int indBrakeRB = pinocchio_model_ptr_->getFrameId("right_back_brake_joint");
+    int indWheelRB = pinocchio_model_ptr_->getFrameId("right_back_wheel_joint");
+    int indSteerlRB = pinocchio_model_ptr_->getFrameId("right_back_steer_joint");
+    //RF
+    // int indBrakeRF = pinocchio_model_ptr_->getFrameId("right_front_brake_joint");
+    int indWheelRF = pinocchio_model_ptr_->getFrameId("right_front_wheel_joint");
+    int indSteerlRF = pinocchio_model_ptr_->getFrameId("right_front_steer_joint");
+
+
+    // Base velocities 
+    vector3 baseLinVel = Eigen::Matrix<scalar_t, 3, 1>::Zero();
+    baseLinVel[0] = baseInput[1];
+    baseLinVel[1] = baseInput[2];
+
+    vector3 baseAngVel = Eigen::Matrix<scalar_t, 3, 1>::Zero();
+    baseAngVel[2] = baseInput[0];
+
+    vector3 r_WP = Eigen::Matrix<scalar_t, 3, 1>::Zero();
+    r_WP[2] = wheelRadius;
+
+     // Transformation matrix
+    auto &data = *pinocchio_data_ptr_;
+    pinocchio::SE3Tpl<scalar_t, 0> worldToBaseTransf = data.oMf[indBaseLink];
+
+    //LB
+    pinocchio::SE3Tpl<scalar_t, 0> worldToWheelLBTransf = data.oMf[indWheelLB];
+    pinocchio::SE3Tpl<scalar_t, 0> worldToSteerLBTransf = data.oMf[indSteerlLB];
+    pinocchio::SE3Tpl<scalar_t, 0> steerLBToBase = worldToSteerLBTransf.inverse() * worldToBaseTransf;
+
+    //LF
+    pinocchio::SE3Tpl<scalar_t, 0> worldToWheelLFTransf = data.oMf[indWheelLF];
+    pinocchio::SE3Tpl<scalar_t, 0> worldToSteerLFTransf = data.oMf[indSteerlLF];
+    pinocchio::SE3Tpl<scalar_t, 0> steerLFToBase = worldToSteerLFTransf.inverse() * worldToBaseTransf;
+
+    //RB
+    pinocchio::SE3Tpl<scalar_t, 0> worldToWheelRBTransf = data.oMf[indWheelRB];
+    pinocchio::SE3Tpl<scalar_t, 0> worldToSteerRBTransf = data.oMf[indSteerlRB];
+    pinocchio::SE3Tpl<scalar_t, 0> steerRBToBase = worldToSteerRBTransf.inverse() * worldToBaseTransf;
+
+    //RF
+    pinocchio::SE3Tpl<scalar_t, 0> worldToWheelRFTransf = data.oMf[indWheelRF];
+    pinocchio::SE3Tpl<scalar_t, 0> worldToSteerRFTransf = data.oMf[indSteerlRF];
+    pinocchio::SE3Tpl<scalar_t, 0> steerRFToBase = worldToSteerRFTransf.inverse() * worldToBaseTransf;
+
+    // LB LF RB RF
+    vector_t wheelVel = vector_t::Zero(4);
+    vector_t steerAngle = vector_t::Zero(4);
+    vector_t steerVel = vector_t::Zero(4);
+
+    vector_t temp_v = (baseLinVel + baseAngVel.cross(steerLBToBase.inverse().translation()));
+    vector_t temp_v2 = (baseLinVel + baseAngVel.cross(steerLFToBase.inverse().translation()));
+    vector_t temp_v3 = (baseLinVel + baseAngVel.cross(steerRBToBase.inverse().translation()));
+    vector_t temp_v4 = (baseLinVel + baseAngVel.cross(steerRFToBase.inverse().translation()));
+
+    
+    if(baseLinVel.norm()+baseAngVel.norm()>0.02)
+    {
+        wheelVel[0] = (steerLBToBase.rotation()*temp_v)[0]/wheelRadius;
+        wheelVel[1] = -(steerLFToBase.rotation()*temp_v2)[0]/wheelRadius;
+        wheelVel[2] = -(steerRBToBase.rotation()*temp_v3)[0]/wheelRadius;
+        wheelVel[3] = (steerRFToBase.rotation()*temp_v4)[0]/wheelRadius;
+    
+        steerAngle[0] = -atan2(temp_v[1],temp_v[0]);
+        steerAngle[1] = -atan2(temp_v2[1],temp_v2[0]);
+        steerAngle[2] = -atan2(temp_v3[1],temp_v3[0]);
+        steerAngle[3] = -atan2(temp_v4[1],temp_v4[0]);
+    }
+    else{
+        for(int i=0; i<4; i++)
+        {
+            steerAngle[i] = currState_( lb_steer_state_ind + 3*i);
+            wheelVel[i] = 0;
+        }
+    }
+
+    vector_t solution = vector_t::Zero(8);
+    for(int i=0; i<4; i++)
+    {
+        // if(fabs(currState_( lb_steer_state_ind + 2*i) - steerAngle[i])>M_PI/2)
+        if(fabs(steerAngle[i])>M_PI/2)
+        {
+        steerAngle[i] = normalizeAngle(steerAngle[i] + M_PI);
+        }
+        steerVel[i] = (currState_( lb_steer_state_ind + 3*i) - steerAngle[i])*KpSteer_;
+
+        if (steerVel[i] > upperBound_[ lb_steer_input_ind+2*i])
+        {
+        steerVel[i] = upperBound_[ lb_steer_input_ind+2*i];
+        }
+        else if (steerVel[i] < -upperBound_[ lb_steer_input_ind+2*i])
+        {
+        steerVel[i] = -upperBound_[ lb_steer_input_ind+2*i];
+        }
+
+        if (wheelVel[i] > upperBound_[ lb_wheel_input_ind+2*i])
+        {
+        wheelVel[i] = upperBound_[ lb_wheel_input_ind+2*i];
+        }
+        else if (wheelVel[i] < -upperBound_[ lb_wheel_input_ind+2*i])
+        {
+        wheelVel[i] = -upperBound_[ lb_wheel_input_ind+2*i];
+        }
+    }
+    // std::cout << "wheelVel: " << wheelVel.transpose() << "\n";
+    // std::cout << "steerAngle: " << steerAngle.transpose() << "\n";
+    solution.head(4) = wheelVel;
+    solution.tail(4) = -steerVel;
+
+    return solution;
+}
+
+double normalizeAngle(double angle) {
+    // 将角度标准化到0到2*pi
+    angle = fmod(angle, 2 * M_PI);
+    // 如果angle为负，将其转换为正值
+    if (angle < 0) {
+        angle += 2 * M_PI;
+    }
+    // 将角度调整到-pi到pi
+    if (angle > M_PI) {
+        angle -= 2 * M_PI;
+    }
+    return angle;
+}
+
 visualization_msgs::MarkerArray MMVisConfig::getMarkerArray(const Eigen::VectorXd &joint_state, int idx, double alpha) {
     pinocchio::forwardKinematics(*pinocchio_model_ptr_, *pinocchio_data_ptr_, joint_state);
     pinocchio::updateFramePlacements(*pinocchio_model_ptr_, *pinocchio_data_ptr_);
@@ -176,5 +323,7 @@ visualization_msgs::Marker MMVisConfig::getMarker(int id, std::string ns, double
     meshMarker.mesh_resource = mesh_file;
     return meshMarker;
 }
+
+
 
 }// namespace mobile_manipulator

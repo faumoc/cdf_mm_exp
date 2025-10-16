@@ -20,6 +20,8 @@
 #include <mm_msg/TargetTrajectories.h>
 #include <mm_msg/SolverInput.h>
 
+#include <trac_ik/trac_ik.hpp>
+#include <kdl/chainiksolverpos_lma.hpp>
 using namespace mobile_manipulator;
 namespace mm_ros_control {
 
@@ -49,25 +51,10 @@ namespace mm_ros_control {
         void cmdVelCallback(const geometry_msgs::TwistPtr& msg);
         void keyboardCallback(const std_msgs::Bool::ConstPtr& msg );
         void trajectoryCallback(const mm_msg::TargetTrajectories::ConstPtr& msg);
-
-        private:
-
-        bool firstRun_;
+        void targetStateCallback(const mm_msg::State::ConstPtr& msg);
+        void eeTargetCallback(const manipulation_msgs::ReachPoseActionGoal::ConstPtr& msg);
         
-        std::vector<hardware_interface::JointHandle> steerJoints_;
-        std::vector<hardware_interface::JointHandle> wheelJoints_;
-        std::vector<hardware_interface::JointHandle> armJoints_;
-        std::vector<hardware_interface::JointHandle> brakeJoints_;
-        std::vector<hardware_interface::JointHandle> gripperJoints_;
 
-        std::mutex updateOdomMutex_;
-        SystemObservation observation_;
-        SystemObservation currObservation_;
-        SwerveModelInfo swerveModelInfo_;
-        ModelSettings modelSettings_;
-        std::unique_ptr<SwerveTarget> swerveTarget_;
-        geometry_msgs::Pose currentObservedPose_;
-        vector_t ee_target_;
         struct RobotInputs {
             Eigen::Vector4d wheelsInput;
             Eigen::Vector4d steersInput;
@@ -83,6 +70,28 @@ namespace mm_ros_control {
                 brakesInput(Eigen::Vector4d::Zero()),
                 stamp(0.0) {}
         };
+        RobotInputs upperBoundConstraints(RobotInputs inputs, vector_t upperBound);
+        
+        private:
+
+        bool firstRun_;
+        
+        std::vector<hardware_interface::JointHandle> steerJoints_;
+        std::vector<hardware_interface::JointHandle> wheelJoints_;
+        std::vector<hardware_interface::JointHandle> armJoints_;
+        std::vector<hardware_interface::JointHandle> brakeJoints_;
+        std::vector<hardware_interface::JointHandle> gripperJoints_;
+
+        std::mutex updateOdomMutex_;
+        SystemObservation observation_;
+        SystemObservation currObservation_;
+        SystemObservation lastObservation_;
+        SwerveModelInfo swerveModelInfo_;
+        ModelSettings modelSettings_;
+        std::unique_ptr<SwerveTarget> swerveTarget_;
+        geometry_msgs::Pose currentObservedPose_;
+        vector_t traj_target_;
+        
         std::vector<std::string> jointNames_;
         std::unique_ptr<tf::TransformListener> listener_;
         tf::StampedTransform ee_transform_;
@@ -92,7 +101,10 @@ namespace mm_ros_control {
         ros::Subscriber subCmdVel_;
         ros::Subscriber subKeyboard_;
         ros::Subscriber subTrajectory_;
-        ros::Publisher StatePublisher_;
+        ros::Publisher SolverStatePublisher_;
+        ros::Publisher StatePublisher_; 
+        ros::Subscriber TargetStateSubscriber_;
+        ros::Subscriber eeTargetSubscriber_;
         bool getTrajectoryFlag_ = true;
         vector_t keyCmdVel_;
         bool keyCmdMod_ = false;
@@ -105,5 +117,22 @@ namespace mm_ros_control {
         
         std::vector<mobile_manipulator::MMState> ObjectTrajectory_;
         std::mutex trajectoryMutex_;
+        vector_t C_Target_;
+
+        enum StateMachine {
+            IDLE,
+            TRACKING_TARGET,
+            GET_TRAJECTORY,
+            EXECUTING_TRAJECTORY,
+            KEYBOARD_CONTROL
+        } stateMachine_ = IDLE;
+
+        double Kp_ = 5.0;
+        double Kd_ = 2.0;
+        vector_t upperBound_;
+
+        // TRAC_IK::TRAC_IK ik_solver_;
+        std::shared_ptr<TRAC_IK::TRAC_IK> ik_solver_ptr_;
+        
     };
 } // namespace mmRosControl

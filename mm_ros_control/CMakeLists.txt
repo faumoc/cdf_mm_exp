@@ -20,10 +20,12 @@ set(CATKIN_PACKAGE_DEPENDENCIES
     geometry_msgs
     mm_msg
     mm_visualize
-    interactive_markers)
+    interactive_markers
+    trac_ik_lib)
 
 find_package(catkin REQUIRED COMPONENTS ${CATKIN_PACKAGE_DEPENDENCIES})
 find_package(PCL 1.7 REQUIRED COMPONENTS common io)
+
 # find_library(fmt REQUIRED)
 
 

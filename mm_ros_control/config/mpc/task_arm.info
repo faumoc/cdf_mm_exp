@@ -198,13 +198,13 @@ jointVelocityLimits
     (1,0) 1.5  ; y velocity
     (2,0) 1.5  ; turning velocity
     (3,0) 5.0  ; lb steer
-    (4,0) 10  ; lb wheel
+    (4,0) 20  ; lb wheel
     (5,0) 5.0  ; lf steer
-    (6,0) 10  ; lf wheel
+    (6,0) 20  ; lf wheel
     (7,0) 5.0  ; rb steer
-    (8,0) 10  ; rb wheel
+    (8,0) 20  ; rb wheel
     (9,0) 5.0  ; rf steer
-    (10,0) 10  ; rf wheel
+    (10,0) 20  ; rf wheel
     (11,0) 0.8  ; sh rot
     (12,0) 0.8  ; sh fle
     (13,0) 0.8  ; el fle

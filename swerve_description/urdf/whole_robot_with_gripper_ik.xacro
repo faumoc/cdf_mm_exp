@@ -7,6 +7,37 @@
 
     <link name="base_link"/>
 
+    <link name="move_x_link">
+    <joint name="move_x_joint" type="prismatic">
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <parent link="base_link"/>
+        <child link="move_x_link" />
+        <axis xyz="1 0 0" />
+        <limit effort="1000" lower="-.0" upper="10.0" velocity="1.0"/>
+        <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-1.0" soft_upper_limit="1.0" />
+        <joint_properties damping="100.0" friction="5.0"/>
+    </joint>
+    
+    <link name="move_y_link">
+    <joint name="move_y_joint" type="prismatic">
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <parent link="move_x_link"/>
+        <child link="move_y_link" />
+        <axis xyz="0 1 0" />
+        <limit effort="1000" lower="-.0" upper="10.0" velocity="1.0"/>
+        <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-1.0" soft_upper_limit="1.0" />
+        <joint_properties damping="100.0" friction="5.0"/>
+
+    <link name="move_yaw_link">
+    <joint name="move_yaw_joint" type="revolute">
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <parent link="move_y_link"/>
+        <child link="move_yaw_link" />
+        <axis xyz="0 0 1" />
+        <limit effort="1000" lower="-3.1416" upper="3.1416" velocity="1.0"/>
+        <safety_controller k_position="100" k_velocity="100" soft_lower_limit="-3.1416" soft_upper_limit="3.1416" />
+        <joint_properties damping="100.0" friction="5.0"/>
+
     <link name="m_body">
         <inertial>
             <origin xyz="-0.0107573806983678 -0.000121111379146382 0.168820068401291" rpy="0 0 0" />
@@ -31,14 +62,12 @@
     </link>
     <joint name="xbase_arm_joint" type="fixed">
         <origin xyz="0.2625 0 0.2745" rpy="0 0 0" />
-        <parent link="base_link"/>
+        <parent link="move_yaw_link"/>
         <child link="x_arm_link" />
     </joint>
 
-
-
     <joint name="base_link_to_body" type="fixed">
-        <parent link="base_link"/>
+        <parent link="move_yaw_link"/>
         <child link="m_body"/>
         <origin xyz="0 0 0"/>
     </joint>
