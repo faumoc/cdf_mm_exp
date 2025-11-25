@@ -10,6 +10,9 @@
 #include <kdl/chainiksolverpos_lma.hpp>
 #include <urdf/model.h>
 #include <chrono>
+#include <sensor_msgs/JointState.h>
+
+#define MASTER 
 namespace mm_ros_control{
 
 bool mmRosControl::init(hardware_interface::VelocityJointInterface* hw, ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh) {
@@ -129,6 +132,14 @@ bool mmRosControl::init(hardware_interface::VelocityJointInterface* hw, ros::Nod
 
     ik_solver_ptr_ = std::make_shared<TRAC_IK::TRAC_IK>(base_name, tip_name, "/ik_robot_description", 0.005, 1e-5, TRAC_IK::Speed);
     
+    #ifdef MASTER
+        subRobotState_ = root_nh.subscribe("/swerve_base/moma_state", 1, &mmRosControl::robotStateCallback, this);
+        subRobotPos_ = root_nh.subscribe("/vrpn_client_node/moma/pose", 1, &mmRosControl::robotPosCallback, this);
+        // subOBSPos_ = root_nh.subscribe("/vrpn_client_node/OBS/pose", 1, &mmRosControl::OBSPosCallback, this);
+        tf_odom_pub_ = root_nh.advertise<nav_msgs::Odometry>("/odom", 100);
+        RobotOutputPub_ = root_nh.advertise<std_msgs::Float32MultiArray>("/swerve_base/solver_output", 100);
+        jointPublisher_ = root_nh.advertise<sensor_msgs::JointState>("/virtual/joint_states", 1);
+    #endif
     return true;
 }
 
@@ -455,7 +466,11 @@ void mmRosControl::update(const ros::Time& time, const ros::Duration& period) {
         break;
     }
     prev_state = stateMachine_;
+
     currInputs = upperBoundConstraints(currInputs, upperBound_);
+
+    #ifndef MASTER 
+
     for (size_t i = 0; i < steerJoints_.size(); ++i) {
         steerJoints_[i].setCommand(currInputs.steersInput(i));
     }
@@ -470,6 +485,19 @@ void mmRosControl::update(const ros::Time& time, const ros::Duration& period) {
         gripperJoints_[i].setCommand(currInputs.gripperInput);
     }
     }
+    #endif
+
+    #ifdef MASTER
+    {
+        std_msgs::Float32MultiArray input_msg;
+        input_msg.data = {currInputs.wheelsInput[0], currInputs.wheelsInput[1], currInputs.wheelsInput[2], currInputs.wheelsInput[3],
+                          currInputs.steersInput[0], currInputs.steersInput[1], currInputs.steersInput[2], currInputs.steersInput[3],
+                          currInputs.armInputs[0], currInputs.armInputs[1], currInputs.armInputs[2], currInputs.armInputs[3],
+                          currInputs.armInputs[4], currInputs.armInputs[5], currInputs.gripperInput};
+        RobotOutputPub_.publish(input_msg);
+    
+    }
+    #endif
 
 
 }
@@ -651,6 +679,89 @@ void mmRosControl::eeTargetCallback(const manipulation_msgs::ReachPoseActionGoal
         stateMachine_ = GET_TRAJECTORY;
     } else {
         std::cout << "IK solver failed with error code: " << rc << std::endl;
+    }
+}
+
+void mmRosControl::robotPosCallback(const geometry_msgs::PoseStamped& msg) {
+   tf2::Quaternion q_transformed;
+   optitrack_ = true;
+  {
+    std::lock_guard<std::mutex> lockGuard(updateOdomMutex_);
+    currObservation_.state(x_state_ind) = msg.pose.position.x;
+    currObservation_.state(y_state_ind) = -msg.pose.position.z;
+    currObservation_.state(z_state_ind) = 0;
+    tf2::Quaternion q_pose = tf2::Quaternion(msg.pose.orientation.x, msg.pose.orientation.y, msg.pose.orientation.z, msg.pose.orientation.w);
+    tf2::Quaternion q_rotation;
+    q_rotation.setRPY(M_PI / 2, 0, 0);
+    q_transformed = q_rotation * q_pose;
+    currObservation_.state(x_quat_state_ind) = q_transformed.x();
+    currObservation_.state(y_quat_state_ind) = q_transformed.y();
+    currObservation_.state(z_quat_state_ind) = q_transformed.z();
+    currObservation_.state(w_quat_state_ind) = q_transformed.w();
+    
+  }
+  nav_msgs::Odometry odom;
+  odom.header.stamp = ros::Time::now();
+  odom.header.frame_id = "odom";
+  odom.child_frame_id = "base_link";
+  odom.pose.pose.position.x = msg.pose.position.x;
+  odom.pose.pose.position.y = -msg.pose.position.z;
+  odom.pose.pose.position.z = 0;
+  odom.pose.pose.orientation.x = q_transformed.x();
+  odom.pose.pose.orientation.y = q_transformed.y();
+  odom.pose.pose.orientation.z = q_transformed.z();
+  odom.pose.pose.orientation.w = q_transformed.w();
+  tf_odom_pub_.publish(odom);
+}
+
+void mmRosControl::robotStateCallback(const std_msgs::Float32MultiArray& msg) {
+  {
+   std::lock_guard<std::mutex> lockGuard(updateOdomMutex_);
+    currObservation_.time = ros::Time().now().toSec();
+
+    for (size_t i = 0; i < steerJoints_.size(); ++i) {
+      currObservation_.state(modelSettings_.steersStateIndex[i]) = msg.data[i];
+    }
+    for (size_t i = 0; i < wheelJoints_.size(); ++i) {
+      currObservation_.state(modelSettings_.wheelsStateIndex[i]) =  msg.data[i+4];
+    }
+    if (swerveModelInfo_.armPresent) {
+      for (size_t i = 0; i < armJoints_.size(); ++i) {
+        currObservation_.state(modelSettings_.armJointsStateIndex[i]) = msg.data[i+8];
+      }
+    }
+  }
+    //jointPublisher_
+    sensor_msgs::JointState joint_state;
+    joint_state.header.stamp = ros::Time::now();
+    joint_state.name = jointNames_;
+    joint_state.position.resize(jointNames_.size());
+    for (int i = 0; i < jointNames_.size(); ++i) {
+      joint_state.position[i] = msg.data[i];
+    }
+    jointPublisher_.publish(joint_state);
+    
+    if(!optitrack_)
+    {
+      currObservation_.state(x_state_ind) = msg.data[15];
+      currObservation_.state(y_state_ind) = msg.data[16];
+      currObservation_.state(z_state_ind) = msg.data[17];
+      currObservation_.state(x_quat_state_ind) = msg.data[18];
+      currObservation_.state(y_quat_state_ind) = msg.data[19];
+      currObservation_.state(z_quat_state_ind) = msg.data[20];
+      currObservation_.state(w_quat_state_ind) = msg.data[21];
+
+      nav_msgs::Odometry odom;
+      odom.header.stamp = ros::Time::now();
+      odom.header.frame_id = "odom";
+      odom.child_frame_id = "base_link";
+      odom.pose.pose.position.x = msg.data[15];
+      odom.pose.pose.position.y = msg.data[16];
+      odom.pose.pose.position.z = 0;
+      odom.pose.pose.orientation.x = msg.data[18];
+      odom.pose.pose.orientation.y = msg.data[19];
+      odom.pose.pose.orientation.z = msg.data[20];
+      tf_odom_pub_.publish(odom);
     }
 }
 

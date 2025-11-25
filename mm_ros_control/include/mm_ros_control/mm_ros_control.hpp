@@ -22,6 +22,7 @@
 
 #include <trac_ik/trac_ik.hpp>
 #include <kdl/chainiksolverpos_lma.hpp>
+#include <std_msgs/Float32MultiArray.h>
 using namespace mobile_manipulator;
 namespace mm_ros_control {
 
@@ -53,7 +54,9 @@ namespace mm_ros_control {
         void trajectoryCallback(const mm_msg::TargetTrajectories::ConstPtr& msg);
         void targetStateCallback(const mm_msg::State::ConstPtr& msg);
         void eeTargetCallback(const manipulation_msgs::ReachPoseActionGoal::ConstPtr& msg);
-        
+        void robotStateCallback(const std_msgs::Float32MultiArray& msg);
+        void robotPosCallback(const geometry_msgs::PoseStamped& msg);
+        void OBSPosCallback(const geometry_msgs::PoseStamped& msg);
 
         struct RobotInputs {
             Eigen::Vector4d wheelsInput;
@@ -106,10 +109,19 @@ namespace mm_ros_control {
         ros::Publisher StatePublisher_; 
         ros::Subscriber TargetStateSubscriber_;
         ros::Subscriber eeTargetSubscriber_;
+
+        ros::Subscriber subRobotState_;
+        ros::Subscriber subRobotPos_;
+        ros::Subscriber subOBSPos_;
+        ros::Publisher RobotOutputPub_;
+        ros::Publisher tf_odom_pub_;
+        ros::Publisher jointPublisher_;
+
         bool getTrajectoryFlag_ = true;
         vector_t keyCmdVel_;
         bool keyCmdMod_ = false;
         bool initTargetSet_ = false;
+        bool optitrack_ = false;
 
         MMVisConfig::Ptr mmVisConfigPtr_;
         map_util mapUtil_;
@@ -134,6 +146,8 @@ namespace mm_ros_control {
 
         // TRAC_IK::TRAC_IK ik_solver_;
         std::shared_ptr<TRAC_IK::TRAC_IK> ik_solver_ptr_;
+
+     
         
     };
 } // namespace mmRosControl
