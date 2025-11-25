@@ -316,7 +316,7 @@ void mmRosControl::update(const ros::Time& time, const ros::Duration& period) {
         if(ObjectTrajectory_.size() > 0){
             std::lock_guard<std::mutex> lock(trajectoryMutex_);
             mmVisConfigPtr_->DisplayTrajectory(ObjectTrajectory_, 0.5);  
-        stateMachine_ = EXECUTING_TRAJECTORY;
+        stateMachine_ = IDLE;
         }
 
         currInputs.wheelsInput.setZero();
@@ -410,8 +410,10 @@ void mmRosControl::update(const ros::Time& time, const ros::Duration& period) {
 
 
         if (ObjectPointIndex >= objectTrajSize - 1){
+
             std::cout << "Trajectory execution completed." << std::endl;
             stateMachine_ = IDLE;
+            ObjectTrajectory_.clear();
             currInputs.wheelsInput.setZero();
             currInputs.steersInput.setZero();
             currInputs.armInputs.setZero();

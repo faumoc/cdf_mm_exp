@@ -3,7 +3,7 @@
 
   <arg name="mpc" default="false" />
   <arg name="model" default="$(find swerve_description)/urdf/whole_robot_with_gripper.xacro" />
-  <arg name="gazebo_gui" default="true" />
+  <arg name="gazebo_gui" default="false" />
   <!-- <arg name="model" default="$(find swerve_description)/urdf/holonomic_mm_arm.urdf.xacro" /> -->
 
   <include file="$(find swerve_control)/launch/highlevel_controller.launch">
@@ -28,7 +28,7 @@
   <param name="taskFile" value="$(arg taskFile)" />
   <param name="libFolder" value="$(arg libFolder)" />
   <param name="model_size" value="$(arg model_size_File)" />
-  <param name="pcd_file" value="$(find mm_ros_control)/data/vis.pcd" />
+  <param name="pcd_file" value="$(find mm_ros_control)/data/Preview-07.pcd" />
 
   <group ns="$(arg ns)">
     <node name="task_space_action_server" pkg="trapezoidal_tracker" type="task_space_action_server_node" output="screen" >
@@ -42,7 +42,7 @@
     <arg name="model" value="$(arg model)" />
     <arg name="gui" default="$(arg gazebo_gui)" />
     <arg name="ns" value="$(arg ns)" />
-    <arg name="world_name" value="$(find swerve_description)/worlds/cdf_test.world" />
+    <!-- <arg name="world_name" value="$(find swerve_description)/worlds/cdf_test.world" /> -->
   </include>
 
   <include file="$(find swerve_control)/launch/opc.launch"/>

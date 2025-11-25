@@ -58,7 +58,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 # set(CMAKE_PREFIX_PATH "$ENV{HOME}/.local")
 
-pkg_check_modules(pinocchio REQUIRED pinocchio)
+
 
 catkin_package(
   CATKIN_DEPENDS
@@ -70,7 +70,7 @@ catkin_package(
   DEPENDS
   EIGEN3
   Boost
-  pinocchio)
+)
 # set(FLAGS
 #     ${OCS2_CXX_FLAGS} ${pinocchio_CFLAGS_OTHER} -Wno-ignored-attributes
 #     -Wno-invalid-partial-specialization -DPINOCCHIO_URDFDOM_TYPEDEF_SHARED_PTR
@@ -81,7 +81,6 @@ include_directories(
   ${Boost_INCLUDE_DIRS}
   ${catkin_INCLUDE_DIRS}
   # ${EIGEN3_INCLUDE_DIRS}
-  ${pinocchio_INCLUDE_DIRS}
   ${PCL_INCLUDE_DIRS}               
   ${EIGEN3_INCLUDE_DIR}     
   ${CPPAD_INCLUDE_DIRS}
@@ -116,7 +115,6 @@ target_link_libraries(
   piqp::piqp # the piqp library (header file library)
   -ldl
   casadi::casadi # link to casadi
-  ${pinocchio_LIBRARY_DIRS}
   )
 
 # target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_17)

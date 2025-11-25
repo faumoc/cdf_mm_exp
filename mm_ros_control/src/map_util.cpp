@@ -11,7 +11,7 @@ pcl::PointCloud<pcl::PointXYZ>  map_util::readPCDFile(const std::string& file_na
         PCL_ERROR("Couldn't read file %s\n", file_name.c_str());
     }
     for (auto& point : cloud.points) {
-        point.x -= 2.0;
+        point.z += 0.3;
     }
     cloud_ = cloud;
 

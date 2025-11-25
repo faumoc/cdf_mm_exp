@@ -13,6 +13,9 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   visualization_msgs
 )
+set(pinocchio_DIR "/opt/openrobots/lib/cmake/pinocchio")
+set(hpp-fcl_DIR "/opt/openrobots/lib/cmake/hpp-fcl")
+set(coal_DIR "/opt/openrobots/lib/cmake/coal")
 find_package(pinocchio REQUIRED)
 
 catkin_package(
