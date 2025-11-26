@@ -51,6 +51,7 @@ namespace mm_ros_control {
         void odomCallback(const nav_msgs::OdometryPtr& msg);
         void cmdVelCallback(const geometry_msgs::TwistPtr& msg);
         void keyboardCallback(const std_msgs::Bool::ConstPtr& msg );
+        void trajExecCallback(const std_msgs::Bool::ConstPtr& msg );
         void trajectoryCallback(const mm_msg::TargetTrajectories::ConstPtr& msg);
         void targetStateCallback(const mm_msg::State::ConstPtr& msg);
         void eeTargetCallback(const manipulation_msgs::ReachPoseActionGoal::ConstPtr& msg);
@@ -104,6 +105,7 @@ namespace mm_ros_control {
         ros::Subscriber odometrySub_;
         ros::Subscriber subCmdVel_;
         ros::Subscriber subKeyboard_;
+        ros::Subscriber subTrajExec_;
         ros::Subscriber subTrajectory_;
         ros::Publisher SolverStatePublisher_;
         ros::Publisher StatePublisher_; 
@@ -136,6 +138,7 @@ namespace mm_ros_control {
             IDLE,
             TRACKING_TARGET,
             GET_TRAJECTORY,
+            GETTED_TRAJECTORY,
             EXECUTING_TRAJECTORY,
             KEYBOARD_CONTROL
         } stateMachine_ = IDLE;

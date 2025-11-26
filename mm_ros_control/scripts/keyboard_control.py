@@ -13,6 +13,7 @@ rospy.init_node('keyboard_driver', anonymous=True)
 # 创建速度和布尔值的发布者
 cmd_vel = rospy.Publisher('/cmd_vel', Twist, queue_size=1)
 keyboard_pub = rospy.Publisher('/keyboard', Bool, queue_size=1)
+traj_exec_pub = rospy.Publisher('/traj_exec', Bool, queue_size=1)
 
 # 用于跟踪当前按下的键
 pressed_keys = set()
@@ -38,7 +39,6 @@ def update_move():
     if 'a' in pressed_keys:
         move.angular.x = 5.5
 
-    print(move)
     cmd_vel.publish(move)
 
 def on_press(key):
@@ -51,6 +51,14 @@ def on_press(key):
         elif key.char == 'o':
             key_pressed.data = False
             keyboard_pub.publish(key_pressed)
+        elif key.char == 't':
+            traj_exec = Bool()
+            traj_exec.data = True
+            traj_exec_pub.publish(traj_exec)
+        elif key.char == 'y':
+            traj_exec = Bool()
+            traj_exec.data = False
+            traj_exec_pub.publish(traj_exec)
         elif key.char in ['q', 'e', 'w', 'a']:
             pressed_keys.add(key.char)
     except AttributeError:

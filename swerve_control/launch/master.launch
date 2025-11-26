@@ -14,6 +14,7 @@
   <arg name="action_server_config" value="$(find mm_ros_control)/config/task_space_action_server/swerve_base.yaml" />
    <!-- The URDF model of the robot -->
   <arg name="urdf_path" default="$(find swerve_description)/urdf/holonomic_mm_arm.urdf.xacro" />
+  <arg name="ik_urdf_path" default="$(find swerve_description)/urdf/holonomic_mm_arm_ik.urdf.xacro" />
   <!-- <arg name="urdf_path" default="$(find swerve_description)/urdf/whole_robot_with_gripper.xacro" /> -->
   <!-- The task file for the mpc. -->
   <arg name="taskFile" default="$(find mm_ros_control)/config/mpc/task_arm.info"/>
@@ -23,32 +24,32 @@
   <arg name="model_size_File" default="$(find mm_ros_control)/config/model_size.info" />
 
   <param name="/swerve_mpc/robot_description" command="$(find xacro)/xacro $(arg urdf_path)"/>
+  <param name="robot_description" command="$(find xacro)/xacro $(arg urdf_path)"/>
+  <param name="/ik_robot_description" command="$(find xacro)/xacro $(arg ik_urdf_path)"/>
   <param name="taskFile" value="$(arg taskFile)" />
   <param name="libFolder" value="$(arg libFolder)" />
   <param name="model_size" value="$(arg model_size_File)" />
-  <!-- <param name="pcd_file" value="$(find decomp_test_node)/data/downdsampled.pcd"/> -->
-   <!-- <param name="pcd_file" value="$(find decomp_test_node)/data/exp1.pcd"/> -->
-   <param name="robot_description" command="$(find xacro)/xacro $(arg model)" />
+  <param name="pcd_file" value="$(find mm_ros_control)/data/Preview-05.pcd" />
 
   <group ns="$(arg ns)">
-      <node name="task_space_action_server" pkg="trapezoidal_tracker" type="task_space_action_server_node" output="screen" launch-prefix="">
-        <rosparam command="load" file="$(arg action_server_config)" />
-      </node>
+    <node name="task_space_action_server" pkg="trapezoidal_tracker" type="task_space_action_server_node" output="screen" >
+      <rosparam command="load" file="$(arg action_server_config)" />
+    </node>
 
-      <param name="robot_description" command="$(find xacro)/xacro $(find swerve_description)/urdf/whole_robot_with_gripper.xacro" />
+    <param name="robot_description" command="$(find xacro)/xacro $(find swerve_description)/urdf/whole_robot_with_gripper.xacro" />
       <rosparam file="$(find swerve_hw_controller)/config/controller.yaml" command="load"/>
 
-      <node name="swerve_hw_master" pkg="swerve_hw_controller" type="swerve_hw_controller_node" output="screen" respawn="false"/>
+    <rosparam file="$(find swerve_hw_controller)/config/controller.yaml" command="load"/>
 
-      <!-- <node name="load_controller" pkg="controller_manager" type="controller_manager" respawn="false" output="screen" 
-          args="spawn joint_state_controller">
-      </node> -->
+    <node name="swerve_hw" pkg="swerve_hw_controller" type="swerve_hw_controller_node" output="screen" respawn="false"/>
 
-      <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" respawn="false" output="screen">
+    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" respawn="false" output="screen">
       <remap from="joint_states" to="/virtual/joint_states" />
       </node>
   </group>
+   
+  
 
   <include file="$(find swerve_control)/launch/opc.launch"/>
-  <node name="rosbag_record" pkg="rosbag" type="record" args="-a -O $(find swerve_control)/bag" output="screen" />
+  <!-- <node name="rosbag_record" pkg="rosbag" type="record" args="-a -O $(find swerve_control)/record/bag" output="screen" /> -->
 </launch>

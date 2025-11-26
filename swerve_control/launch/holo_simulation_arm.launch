@@ -28,7 +28,7 @@
   <param name="taskFile" value="$(arg taskFile)" />
   <param name="libFolder" value="$(arg libFolder)" />
   <param name="model_size" value="$(arg model_size_File)" />
-  <param name="pcd_file" value="$(find mm_ros_control)/data/Preview-07.pcd" />
+  <param name="pcd_file" value="$(find mm_ros_control)/data/Preview-05.pcd" />
 
   <group ns="$(arg ns)">
     <node name="task_space_action_server" pkg="trapezoidal_tracker" type="task_space_action_server_node" output="screen" >

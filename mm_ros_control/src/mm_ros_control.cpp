@@ -12,7 +12,7 @@
 #include <chrono>
 #include <sensor_msgs/JointState.h>
 
-#define MASTER 
+// #define MASTER 
 namespace mm_ros_control{
 
 bool mmRosControl::init(hardware_interface::VelocityJointInterface* hw, ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh) {
@@ -79,6 +79,7 @@ bool mmRosControl::init(hardware_interface::VelocityJointInterface* hw, ros::Nod
 
     subCmdVel_ = root_nh.subscribe("/cmd_vel", 1, &mmRosControl::cmdVelCallback, this);
     subKeyboard_ = root_nh.subscribe("/keyboard", 1, &mmRosControl::keyboardCallback, this);
+    subTrajExec_ = root_nh.subscribe("/traj_exec", 1, &mmRosControl::trajExecCallback, this);
     keyCmdVel_ = vector_t::Zero(3);
     
     mapUtil_ = map_util(root_nh);
@@ -107,10 +108,10 @@ bool mmRosControl::init(hardware_interface::VelocityJointInterface* hw, ros::Nod
         armJoints_.push_back(hw->getHandle(jointName));
         ROS_INFO_STREAM_NAMED(name_, "Adding arm velocity joint: " << jointName);
         }
-        for (const auto& jointName : gripperJointNames) {
-        gripperJoints_.push_back(hw->getHandle(jointName));
-        ROS_INFO_STREAM_NAMED(name_, "Adding gripper velocity joint: " << jointName);
-        }
+        // for (const auto& jointName : gripperJointNames) {
+        // gripperJoints_.push_back(hw->getHandle(jointName));
+        // ROS_INFO_STREAM_NAMED(name_, "Adding gripper velocity joint: " << jointName);
+        // }
     }
 
     ROS_INFO_STREAM_NAMED(name_, "Finished controller initialization");
@@ -327,7 +328,8 @@ void mmRosControl::update(const ros::Time& time, const ros::Duration& period) {
         if(ObjectTrajectory_.size() > 0){
             std::lock_guard<std::mutex> lock(trajectoryMutex_);
             mmVisConfigPtr_->DisplayTrajectory(ObjectTrajectory_, 0.5);  
-        stateMachine_ = IDLE;
+            std::cout << "Trajectory with " << ObjectTrajectory_.size() << " points received." << std::endl;
+            stateMachine_ = GETTED_TRAJECTORY;
         }
 
         currInputs.wheelsInput.setZero();
@@ -340,6 +342,18 @@ void mmRosControl::update(const ros::Time& time, const ros::Duration& period) {
         }
         break;
     }
+    case GETTED_TRAJECTORY:
+        if(prev_state != GETTED_TRAJECTORY) printf("GETTED_TRAJECTORY mode...\n");
+        currInputs.wheelsInput.setZero();
+        currInputs.steersInput.setZero();
+        currInputs.armInputs.setZero();
+        
+        for (int i = 0; i < 6; i++)
+        {
+        currInputs.armInputs(i) = 50 * (arm_position[i] - currObservation_.state(sh_rot_state_ind + i));
+        }
+        break;
+
     case EXECUTING_TRAJECTORY:
     {
         static int ObjectPointIndex = 0;
@@ -556,6 +570,9 @@ void mmRosControl::keyboardCallback(const std_msgs::Bool::ConstPtr& msg ) {
     if (keyCmdMod_) {
         stateMachine_ = KEYBOARD_CONTROL;
     }
+    else {
+        stateMachine_ = IDLE;
+     }
     vector_t initTarget(7);
     try {
         listener_->lookupTransform("odom", swerveModelInfo_.eeFrame, ros::Time(0), ee_transform_);
@@ -572,6 +589,13 @@ void mmRosControl::keyboardCallback(const std_msgs::Bool::ConstPtr& msg ) {
     //   rosReferenceManagerPtr_->setTargetTrajectories(std::move(initTargetTrajectories));
 }
 
+void mmRosControl::trajExecCallback(const std_msgs::Bool::ConstPtr& msg ) {
+    bool execCmd = msg->data;
+    std::cout << "Received trajectory execution command: " << execCmd << std::endl;
+    if (execCmd && stateMachine_ == GETTED_TRAJECTORY) {
+        stateMachine_ = EXECUTING_TRAJECTORY;
+    }
+}
 void mmRosControl::trajectoryCallback(const mm_msg::TargetTrajectories::ConstPtr& msg) {
     std::cout << "Received trajectory callback." << std::endl;
     vector_t state(swerveModelInfo_.stateDim);
