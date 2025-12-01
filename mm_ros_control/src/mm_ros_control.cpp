@@ -93,15 +93,15 @@ bool mmRosControl::init(hardware_interface::VelocityJointInterface* hw, ros::Nod
         jointNames_.insert(jointNames_.end(), armJointNames.begin(), armJointNames.end());
         jointNames_.insert(jointNames_.end(), gripperJointNames.begin(), gripperJointNames.end());
     }
-    for (const auto& jointName : steerJointNames) {
-        steerJoints_.push_back(hw->getHandle(jointName));
-        ROS_INFO_STREAM_NAMED(name_, "Adding steering velocity joint: " << jointName);
-    }
+    // for (const auto& jointName : steerJointNames) {
+    //     steerJoints_.push_back(hw->getHandle(jointName));
+    //     ROS_INFO_STREAM_NAMED(name_, "Adding steering velocity joint: " << jointName);
+    // }
 
-    for (const auto& jointName : wheelJointNames) {
-        wheelJoints_.push_back(hw->getHandle(jointName));
-        ROS_INFO_STREAM_NAMED(name_, "Adding wheel velocity joint: " << jointName);
-    }
+    // for (const auto& jointName : wheelJointNames) {
+    //     wheelJoints_.push_back(hw->getHandle(jointName));
+    //     ROS_INFO_STREAM_NAMED(name_, "Adding wheel velocity joint: " << jointName);
+    // }
 
     if (swerveModelInfo_.armPresent) {
         for (const auto& jointName : armJointNames) {
@@ -225,7 +225,7 @@ void mmRosControl::update(const ros::Time& time, const ros::Duration& period) {
         elapsed_time_flag = false;
     }
 
-    mmVisConfigPtr_->UpdatePinocchioModel(getPinocchioJointPosition(currObservation_.state));
+    mmVisConfigPtr_->UpdatePinocchioModel(getPinocchioJointPosition_moma(currObservation_.state));
 
     vector_t wheelVels = vector_t::Zero(8);
     vector_t baseVel = vector_t::Zero(3);
@@ -504,8 +504,7 @@ void mmRosControl::update(const ros::Time& time, const ros::Duration& period) {
     #ifdef MASTER
     {
         std_msgs::Float32MultiArray input_msg;
-        input_msg.data = {currInputs.wheelsInput[0], currInputs.wheelsInput[1], currInputs.wheelsInput[2], currInputs.wheelsInput[3],
-                          currInputs.steersInput[0], currInputs.steersInput[1], currInputs.steersInput[2], currInputs.steersInput[3],
+        input_msg.data = {baseVel[0], baseVel[1], baseVel[2],
                           currInputs.armInputs[0], currInputs.armInputs[1], currInputs.armInputs[2], currInputs.armInputs[3],
                           currInputs.armInputs[4], currInputs.armInputs[5], currInputs.gripperInput};
         RobotOutputPub_.publish(input_msg);
@@ -764,29 +763,7 @@ void mmRosControl::robotStateCallback(const std_msgs::Float32MultiArray& msg) {
       joint_state.position[i] = msg.data[i];
     }
     jointPublisher_.publish(joint_state);
-    
-    if(!optitrack_)
-    {
-      currObservation_.state(x_state_ind) = msg.data[15];
-      currObservation_.state(y_state_ind) = msg.data[16];
-      currObservation_.state(z_state_ind) = msg.data[17];
-      currObservation_.state(x_quat_state_ind) = msg.data[18];
-      currObservation_.state(y_quat_state_ind) = msg.data[19];
-      currObservation_.state(z_quat_state_ind) = msg.data[20];
-      currObservation_.state(w_quat_state_ind) = msg.data[21];
 
-      nav_msgs::Odometry odom;
-      odom.header.stamp = ros::Time::now();
-      odom.header.frame_id = "odom";
-      odom.child_frame_id = "base_link";
-      odom.pose.pose.position.x = msg.data[15];
-      odom.pose.pose.position.y = msg.data[16];
-      odom.pose.pose.position.z = 0;
-      odom.pose.pose.orientation.x = msg.data[18];
-      odom.pose.pose.orientation.y = msg.data[19];
-      odom.pose.pose.orientation.z = msg.data[20];
-      tf_odom_pub_.publish(odom);
-    }
 }
 
 PLUGINLIB_EXPORT_CLASS(mm_ros_control::mmRosControl, controller_interface::ControllerBase)

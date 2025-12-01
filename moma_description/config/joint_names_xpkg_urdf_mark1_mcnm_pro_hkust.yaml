@@ -1,0 +1,1 @@
+controller_joint_names: ['', 'lf_Joint', 'lb_Joint', 'rf_Joint', 'rb_Joint', 'radar_Joint', 'print_Joint', 'other_Joint', ]

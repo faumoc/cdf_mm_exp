@@ -14,4 +14,11 @@ vector_t getPinocchioJointPosition (const vector_t& state)
   return pinocchio_q;
 }
 
+vector_t getPinocchioJointPosition_moma (const vector_t& state)
+{
+  vector_t pinocchio_q(13);
+  pinocchio_q << state(x_state_ind), state(y_state_ind), state(z_state_ind), state(x_quat_state_ind), state(y_quat_state_ind),
+          state(z_quat_state_ind), state(w_quat_state_ind), state.tail(6);
+  return pinocchio_q;
+}
 }  // namespace mm_ros_control

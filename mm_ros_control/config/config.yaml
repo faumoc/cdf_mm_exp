@@ -1,25 +1,15 @@
 mm_ros_control:
   type        : "mm_ros_control/mmRosControl"
   publish_rate: 50
-  steer_joint_names:
-    - left_back_steer_joint
-    - left_front_steer_joint
-    - right_back_steer_joint
-    - right_front_steer_joint
 
-  wheel_joint_names:
-    - left_back_wheel_joint
-    - left_front_wheel_joint
-    - right_back_wheel_joint
-    - right_front_wheel_joint
 
   arm_joint_names:
-    - SH_JOINT_1
-    - SH_JOINT_2
-    - SH_JOINT_3
-    - SH_JOINT_4
-    - SH_JOINT_5
-    - SH_JOINT_6
+    - armjoint_1
+    - armjoint_2
+    - armjoint_3
+    - armjoint_4
+    - armjoint_5
+    - armjoint_6
 
   gripper_joint_names:
     - left_outer_knuckle_joint

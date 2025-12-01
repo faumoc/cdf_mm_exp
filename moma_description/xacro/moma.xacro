@@ -1,0 +1,130 @@
+<?xml version="1.0"?>
+
+<robot name="mobile_manipulation" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+    <xacro:include filename="$(find moma_description)/xacro/gen3_robotiq_2f_85.xacro"/>
+    <xacro:include filename="$(find moma_description)/urdf/xpkg_urdf_mark1_mcnm_pro_hkust.urdf"/>
+    
+    <link name="root"></link>
+    <joint name="planar_move" type="fixed">
+        <parent link="root"/>
+        <child link="base_link"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+    </joint>
+
+    <joint name="arm_to_chassis" type="fixed">
+        <parent link="base_link"/>
+        <child link="armbase_link"/>
+        <origin xyz="0.03385 -0.00764 0.306" rpy="0 0 0"/>
+    </joint>
+
+    <link name="end_effector_link"/>
+    <joint name="end_effector_joint" type="fixed">
+        <parent link="armend_effector_link"/>
+        <child link="end_effector_link"/>
+        <origin xyz="0 0 0.11" rpy="0 0 0"/>
+    </joint>
+
+    <transmission name="joint_1_trans">
+        <type>transmission_interface/SimpleTransmission</type>
+        <actuator name="$joint_1_motor">
+            <mechanicalReduction>1</mechanicalReduction>
+        </actuator>
+        <joint name="armjoint_1">
+            <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+        </joint>
+    </transmission>
+    <transmission name="joint_2_trans">
+        <type>transmission_interface/SimpleTransmission</type>
+        <actuator name="$joint_2_motor">
+            <mechanicalReduction>1</mechanicalReduction>
+        </actuator>
+        <joint name="armjoint_2">
+            <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+        </joint>
+    </transmission>
+    <transmission name="joint_3_trans">
+        <type>transmission_interface/SimpleTransmission</type>
+        <actuator name="$joint_3_motor">
+            <mechanicalReduction>1</mechanicalReduction>
+        </actuator>
+        <joint name="armjoint_3">
+            <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+        </joint>
+    </transmission>
+    
+    <transmission name="joint_4_trans">
+        <type>transmission_interface/SimpleTransmission</type>
+        <actuator name="$joint_4_motor">
+            <mechanicalReduction>1</mechanicalReduction>
+        </actuator>
+        <joint name="armjoint_4">
+            <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+        </joint>
+    </transmission>
+    <transmission name="joint_5_trans">
+        <type>transmission_interface/SimpleTransmission</type>
+        <actuator name="$joint_5_motor">
+            <mechanicalReduction>1</mechanicalReduction>
+        </actuator>
+        <joint name="armjoint_5">
+            <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+        </joint>
+    </transmission>
+
+    <transmission name="joint_6_trans">
+        <type>transmission_interface/SimpleTransmission</type>
+        <actuator name="$joint_6_motor">
+            <mechanicalReduction>1</mechanicalReduction>
+        </actuator>
+        <joint name="armjoint_6">
+            <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+        </joint>
+    </transmission>
+
+    <gazebo>
+    <plugin filename="libgazebo_ros_planar_move.so" name="planar_move_sim">
+      <commandTopic>/chassis/cmd_vel</commandTopic>
+      <odometryTopic>odom</odometryTopic>
+      <odometryFrame>odom</odometryFrame>
+      <odometryRate>20.0</odometryRate>
+      <robotBaseFrame>base_link</robotBaseFrame>
+    </plugin>
+  </gazebo>
+
+    <gazebo reference="base_link">
+    <self_collide>true</self_collide>
+    </gazebo>
+
+    <gazebo reference="lf_Link">
+        <self_collide>true</self_collide>
+    </gazebo>
+
+    <gazebo reference="lb_Link">
+        <self_collide>true</self_collide>
+    </gazebo>
+
+    <gazebo reference="rf_Link">
+        <self_collide>true</self_collide>
+    </gazebo>
+
+    <gazebo reference="rb_Link">
+        <self_collide>true</self_collide>
+    </gazebo>
+
+    <gazebo reference="radar_Link">
+        <self_collide>true</self_collide>
+    </gazebo>
+
+    <gazebo reference="print_Link">
+        <self_collide>true</self_collide>
+    </gazebo>
+
+    <gazebo reference="other_Link">
+        <self_collide>true</self_collide>
+    </gazebo>
+
+    <gazebo>
+        <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so"/>
+    </gazebo>
+</robot>

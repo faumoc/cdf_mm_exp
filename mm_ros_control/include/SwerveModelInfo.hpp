@@ -99,5 +99,5 @@ struct SwerveModelInfo {
 };
 
 vector_t getPinocchioJointPosition (const vector_t& state);
-
+vector_t getPinocchioJointPosition_moma (const vector_t& state);
 }  // namespace mm_ros_control

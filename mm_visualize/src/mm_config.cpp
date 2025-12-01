@@ -22,17 +22,28 @@ MMVisConfig::MMVisConfig(): mesh_mobile_base_(""),
 
 void MMVisConfig::setParam(ros::NodeHandle &nh){
      
-    std::string mesh_path = ros::package::getPath("swerve_description")  + "/meshes/";
+    // std::string mesh_path = ros::package::getPath("swerve_description")  + "/meshes/";
+    std::string mesh_path = ros::package::getPath("")  + "/meshes/";
     
 
-    mesh_mobile_base_ = "file://" + mesh_path + "holonomic/base_link.STL";
-    mesh_arm_base_ = "file://" + mesh_path + "jaco/base_link.STL";
-    mesh_arm_link1_ = "file://" + mesh_path + "jaco/shoulder_link.STL";
-    mesh_arm_link2_ = "file://" + mesh_path + "jaco/bicep_link.STL";
-    mesh_arm_link3_ = "file://" + mesh_path + "jaco/forearm_link.STL";
-    mesh_arm_link4_ = "file://" + mesh_path + "jaco/spherical_wrist_1_link.STL";
-    mesh_arm_link5_ = "file://" + mesh_path + "jaco/spherical_wrist_2_link.STL";
-    mesh_arm_link6_ = "file://" + mesh_path + "jaco/bracelet_with_vision_link.STL";
+    // mesh_mobile_base_ = "file://" + mesh_path + "holonomic/base_link.STL";
+    // mesh_arm_base_ = "file://" + mesh_path + "jaco/base_link.STL";
+    // mesh_arm_link1_ = "file://" + mesh_path + "jaco/shoulder_link.STL";
+    // mesh_arm_link2_ = "file://" + mesh_path + "jaco/bicep_link.STL";
+    // mesh_arm_link3_ = "file://" + mesh_path + "jaco/forearm_link.STL";
+    // mesh_arm_link4_ = "file://" + mesh_path + "jaco/spherical_wrist_1_link.STL";
+    // mesh_arm_link5_ = "file://" + mesh_path + "jaco/spherical_wrist_2_link.STL";
+    // mesh_arm_link6_ = "file://" + mesh_path + "jaco/bracelet_with_vision_link.STL";
+
+    mesh_mobile_base_ = "file://" + mesh_path + "jaco/base_link.STL";
+    mesh_arm_base_ = "file://" + mesh_path + "jaco/armbase_link.STL";
+    mesh_arm_link1_ = "file://" + mesh_path + "jaco/armshoulder_link.STL";
+    mesh_arm_link2_ = "file://" + mesh_path + "jaco/armbicep_link.STL";
+    mesh_arm_link3_ = "file://" + mesh_path + "jaco/armforearm_link.STL";
+    mesh_arm_link4_ = "file://" + mesh_path + "jaco/armspherical_wrist_1_link.STL";
+    mesh_arm_link5_ = "file://" + mesh_path + "jaco/armspherical_wrist_2_link.STL";
+    mesh_arm_link6_ = "file://" + mesh_path + "jaco/armbracelet_with_vision_link.STL";
+    
     
     const std::string urdf_path = ros::package::getPath("swerve_description") + "/urdf/holonomic_mm_arm.urdf.xacro";
 
@@ -52,6 +63,12 @@ void MMVisConfig::setParam(ros::NodeHandle &nh){
     pinocchio_model_ptr_ = std::make_shared<pinocchio::Model>();
     pinocchio::JointModelFreeFlyerTpl<double> rootJoint;
     pinocchio::urdf::buildModel(urdfTree, rootJoint, *pinocchio_model_ptr_, true);
+    std::cout << "Pinocchio model has " << pinocchio_model_ptr_->nq << " dof and "
+              << pinocchio_model_ptr_->njoints << " joints." << std::endl;
+    for (size_t i = 0; i < pinocchio_model_ptr_->joints.size(); ++i)
+    {
+        std::cout << "Joint " << i << ": " << pinocchio_model_ptr_->joints[i]<< std::endl;
+    }
     pinocchio_data_ptr_ = std::make_shared<pinocchio::Data>(*pinocchio_model_ptr_);
 
     vis_idx_size_ = 10; // 8 links in the mobile manipulator
@@ -258,14 +275,24 @@ visualization_msgs::MarkerArray MMVisConfig::getMarkerArray(const Eigen::VectorX
     pinocchio::forwardKinematics(*pinocchio_model_ptr_, *pinocchio_data_ptr_, joint_state);
     pinocchio::updateFramePlacements(*pinocchio_model_ptr_, *pinocchio_data_ptr_);
 
+    // int indBaseLink = pinocchio_model_ptr_->getFrameId("base_link");
+    // int indXarmLink = pinocchio_model_ptr_->getFrameId("x_arm_link");
+    // int indShoulder = pinocchio_model_ptr_->getFrameId("shoulder_link");
+    // int indBicepLink = pinocchio_model_ptr_->getFrameId("bicep_link");
+    // int indForearmLink = pinocchio_model_ptr_->getFrameId("forearm_link");
+    // int indWrist_1Link = pinocchio_model_ptr_->getFrameId("spherical_wrist_1_link");
+    // int indWrist_2Link = pinocchio_model_ptr_->getFrameId("spherical_wrist_2_link");
+    // int indBraceletLink = pinocchio_model_ptr_->getFrameId("bracelet_link");
+
     int indBaseLink = pinocchio_model_ptr_->getFrameId("base_link");
-    int indXarmLink = pinocchio_model_ptr_->getFrameId("x_arm_link");
-    int indShoulder = pinocchio_model_ptr_->getFrameId("shoulder_link");
-    int indBicepLink = pinocchio_model_ptr_->getFrameId("bicep_link");
-    int indForearmLink = pinocchio_model_ptr_->getFrameId("forearm_link");
-    int indWrist_1Link = pinocchio_model_ptr_->getFrameId("spherical_wrist_1_link");
-    int indWrist_2Link = pinocchio_model_ptr_->getFrameId("spherical_wrist_2_link");
-    int indBraceletLink = pinocchio_model_ptr_->getFrameId("bracelet_link");
+    int indXarmLink = pinocchio_model_ptr_->getFrameId("armbase_link");
+    int indShoulder = pinocchio_model_ptr_->getFrameId("armshoulder_link");
+    int indBicepLink = pinocchio_model_ptr_->getFrameId("armbicep_link");
+    int indForearmLink = pinocchio_model_ptr_->getFrameId("armforearm_link");
+    int indWrist_1Link = pinocchio_model_ptr_->getFrameId("armspherical_wrist_1_link");
+    int indWrist_2Link = pinocchio_model_ptr_->getFrameId("armspherical_wrist_2_link");
+    int indBraceletLink = pinocchio_model_ptr_->getFrameId("armbracelet_link");
+
 
     auto &data = *pinocchio_data_ptr_;
     visualization_msgs::MarkerArray marker_array;
