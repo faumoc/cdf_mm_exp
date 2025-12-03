@@ -111,6 +111,7 @@ namespace mm_ros_control {
         ros::Publisher StatePublisher_; 
         ros::Subscriber TargetStateSubscriber_;
         ros::Subscriber eeTargetSubscriber_;
+        ros::Publisher CmdVelPub_;
 
         ros::Subscriber subRobotState_;
         ros::Subscriber subRobotPos_;

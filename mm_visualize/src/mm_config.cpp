@@ -23,7 +23,7 @@ MMVisConfig::MMVisConfig(): mesh_mobile_base_(""),
 void MMVisConfig::setParam(ros::NodeHandle &nh){
      
     // std::string mesh_path = ros::package::getPath("swerve_description")  + "/meshes/";
-    std::string mesh_path = ros::package::getPath("")  + "/meshes/";
+    std::string mesh_path = ros::package::getPath("moma_description")  + "/meshes/";
     
 
     // mesh_mobile_base_ = "file://" + mesh_path + "holonomic/base_link.STL";
@@ -42,7 +42,7 @@ void MMVisConfig::setParam(ros::NodeHandle &nh){
     mesh_arm_link3_ = "file://" + mesh_path + "jaco/armforearm_link.STL";
     mesh_arm_link4_ = "file://" + mesh_path + "jaco/armspherical_wrist_1_link.STL";
     mesh_arm_link5_ = "file://" + mesh_path + "jaco/armspherical_wrist_2_link.STL";
-    mesh_arm_link6_ = "file://" + mesh_path + "jaco/armbracelet_with_vision_link.STL";
+    mesh_arm_link6_ = "file://" + mesh_path + "jaco/armbracelet_link.STL";
     
     
     const std::string urdf_path = ros::package::getPath("swerve_description") + "/urdf/holonomic_mm_arm.urdf.xacro";

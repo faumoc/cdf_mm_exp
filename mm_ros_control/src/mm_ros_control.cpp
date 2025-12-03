@@ -80,6 +80,7 @@ bool mmRosControl::init(hardware_interface::VelocityJointInterface* hw, ros::Nod
     subCmdVel_ = root_nh.subscribe("/cmd_vel", 1, &mmRosControl::cmdVelCallback, this);
     subKeyboard_ = root_nh.subscribe("/keyboard", 1, &mmRosControl::keyboardCallback, this);
     subTrajExec_ = root_nh.subscribe("/traj_exec", 1, &mmRosControl::trajExecCallback, this);
+    CmdVelPub_  = root_nh.advertise<geometry_msgs::Twist>("/chassis/cmd_vel", 1);
     keyCmdVel_ = vector_t::Zero(3);
     
     mapUtil_ = map_util(root_nh);
@@ -132,7 +133,7 @@ bool mmRosControl::init(hardware_interface::VelocityJointInterface* hw, ros::Nod
     std::string tip_name = "end_effector_link";
 
     ik_solver_ptr_ = std::make_shared<TRAC_IK::TRAC_IK>(base_name, tip_name, "/ik_robot_description", 0.005, 1e-5, TRAC_IK::Speed);
-    
+
     #ifdef MASTER
         subRobotState_ = root_nh.subscribe("/swerve_base/moma_state", 1, &mmRosControl::robotStateCallback, this);
         subRobotPos_ = root_nh.subscribe("/vrpn_client_node/moma/pose", 1, &mmRosControl::robotPosCallback, this);
@@ -387,7 +388,8 @@ void mmRosControl::update(const ros::Time& time, const ros::Duration& period) {
         double alpha = elapsed / 1000.0; // 1.0s between two points
         if (alpha > 1.0) alpha = 1.0;
         vector_t interpState = startState + alpha * (ObjectState - startState);
-
+        std::cout << "Interpolated state: "<< currObservation_.state(x_state_ind) << " " << currObservation_.state(y_state_ind) << " " << interpState.head(3).transpose() << std::endl;
+        std::cout << "Target position: "<< theta_z << std::endl;
         baseVel[0] = 5 * (interpState(2) - theta_z);
         baseVel[1] = 10 * ( interpState(0) - currObservation_.state(x_state_ind));
         baseVel[2] = 10 * ( interpState(1) - currObservation_.state(y_state_ind)) ;
@@ -411,7 +413,7 @@ void mmRosControl::update(const ros::Time& time, const ros::Duration& period) {
         double vy = -baseVel[1] * sin_theta + baseVel[2] * cos_theta;
         baseVel[1] = vx;
         baseVel[2] = vy;
-
+        std::cout << "Base velocity command: "<< baseVel.transpose() << std::endl;
         wheelVels = mmVisConfigPtr_->baseKinemics(baseVel);
         currInputs.wheelsInput = wheelVels.head(4);
         currInputs.steersInput = wheelVels.tail(4);
@@ -482,8 +484,14 @@ void mmRosControl::update(const ros::Time& time, const ros::Duration& period) {
     prev_state = stateMachine_;
 
     currInputs = upperBoundConstraints(currInputs, upperBound_);
-
-    #ifndef MASTER 
+    // Send commands to the joints
+    geometry_msgs::Twist baseVelCmdMsg;
+    baseVelCmdMsg.angular.z = baseVel[0];
+    baseVelCmdMsg.linear.x = baseVel[1];
+    baseVelCmdMsg.linear.y = baseVel[2];
+    
+    CmdVelPub_.publish(baseVelCmdMsg);
+    #ifndef MASTER
 
     for (size_t i = 0; i < steerJoints_.size(); ++i) {
         steerJoints_[i].setCommand(currInputs.steersInput(i));
@@ -597,7 +605,7 @@ void mmRosControl::trajExecCallback(const std_msgs::Bool::ConstPtr& msg ) {
 }
 void mmRosControl::trajectoryCallback(const mm_msg::TargetTrajectories::ConstPtr& msg) {
     std::cout << "Received trajectory callback." << std::endl;
-    vector_t state(swerveModelInfo_.stateDim);
+    vector_t state(13);
  
    {
        std::lock_guard<std::mutex> lock(trajectoryMutex_);
@@ -615,15 +623,16 @@ void mmRosControl::trajectoryCallback(const mm_msg::TargetTrajectories::ConstPtr
            state(z_quat_state_ind) = sin(theta_z / 2.0); // qz
            state(w_quat_state_ind) = cos(theta_z / 2.0); // qw
 
-           state(sh_rot_state_ind) = msg->stateTrajectory[i].data[3]; // q0
-           state(sh_rot_state_ind + 1) = msg->stateTrajectory[i].data[4]; // q1
-           state(sh_rot_state_ind + 2) = msg->stateTrajectory[i].data[5]; // q2
-           state(sh_rot_state_ind + 3) = msg->stateTrajectory[i].data[6]; // q3  
-           state(sh_rot_state_ind + 4) = msg->stateTrajectory[i].data[7]; // q4
-           state(sh_rot_state_ind + 5) = msg->stateTrajectory[i].data[8]; // q5
+        //    state(sh_rot_state_ind) = msg->stateTrajectory[i].data[3]; // q0
+        //    state(sh_rot_state_ind + 1) = msg->stateTrajectory[i].data[4]; // q1
+        //    state(sh_rot_state_ind + 2) = msg->stateTrajectory[i].data[5]; // q2
+        //    state(sh_rot_state_ind + 3) = msg->stateTrajectory[i].data[6]; // q3  
+        //    state(sh_rot_state_ind + 4) = msg->stateTrajectory[i].data[7]; // q4
+        //    state(sh_rot_state_ind + 5) = msg->stateTrajectory[i].data[8]; // q5
+          state.segment<6>(7) = Eigen::Map<const vector_t>(msg->stateTrajectory[i].data.data() + 3, 6);
 
             mobile_manipulator::MMState State;
-            State.q = getPinocchioJointPosition(state);
+            State.q = getPinocchioJointPosition_moma(state);
             State.state = vector_t::Zero(9);
             State.input = vector_t::Zero(9);
             for (int j = 0; j < 9; j++){
